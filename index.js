@@ -5,7 +5,6 @@ const { Client } = require('@notionhq/client');
 
 const app = express();
 const path = require('path');
-const { title } = require('process');
 
 app.use(express.json());
 app.use((req, res, next) => {
@@ -214,10 +213,10 @@ app.post('/api/create-notion-record', async (req, res) => {
       parent: { database_id: DATABASE_ID },
       properties: {
         'Order Number': {
-          title: [{ text: { content: orderNumber } }]
+          rich_text: [{ text: { content: orderNumber } }]
         },
         'Customer Name': {
-          rich_text: [{ text: { content: customerName || '' } }]
+          title: [{ text: { content: customerName || '' } }]
         },
         'Contact Details': {
           rich_text: [{ text: { content: customerEmail || '' } }]
@@ -232,7 +231,12 @@ app.post('/api/create-notion-record', async (req, res) => {
         'Boot Status': {
           select: { name: 'Placed with Supplier' }
         },
-        
+        'Blade Status': {
+          select: { name: 'Placed with Supplier' }
+        },
+        'Last Reviewed': {
+          date: { start: new Date().toISOString().split('T')[0] }
+        }
       }
     });
     
@@ -263,7 +267,8 @@ app.post('/api/generate-link', async (req, res) => {
   const token = generateMagicToken(orderNumber);
   const trackingUrl = `${process.env.BASE_URL}/track?token=${token}`;
   
-  return res.status(200).json({ trackingUrl, token });
+  // Return as plain text so Shopify Flow can use it directly
+  return res.status(200).send(trackingUrl);
 });
 
 // Track order
