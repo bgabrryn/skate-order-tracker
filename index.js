@@ -4,6 +4,8 @@ const crypto = require('crypto');
 const { Client } = require('@notionhq/client');
 
 const app = express();
+const path = require('path');
+
 app.use(express.json());
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,6 +16,9 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 3000;
 
@@ -147,7 +152,7 @@ function mapStatusToKey(status) {
 // ============================================================================
 
 // Health check
-app.get('/', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({ message: 'Skate Order Tracker API is running!' });
 });
 
@@ -271,4 +276,9 @@ app.get('/api/track', async (req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+// Serve React app for all other routes (must be last)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
