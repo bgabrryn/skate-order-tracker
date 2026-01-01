@@ -232,12 +232,7 @@ app.post('/api/create-notion-record', async (req, res) => {
         'Boot Status': {
           select: { name: 'Placed with Supplier' }
         },
-        'Blade Status': {
-          select: { name: 'Placed with Supplier' }
-        },
-        'Last Reviewed': {
-          date: { start: new Date().toISOString().split('T')[0] }
-        }
+        
       }
     });
     
