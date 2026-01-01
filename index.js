@@ -156,6 +156,107 @@ app.get('/api/health', (req, res) => {
   res.json({ message: 'Skate Order Tracker API is running!' });
 });
 
+// Create Notion record from Shopify order
+app.post('/api/create-notion-record', async (req, res) => {
+  const { orderNumber, apiKey, orderData } = req.body;
+  
+  if (apiKey !== process.env.ADMIN_API_KEY) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  if (!orderNumber || !orderData) {
+    return res.status(400).json({ error: 'Order number and data required' });
+  }
+  
+  try {
+    // Check if record already exists
+    const existing = await notion.databases.query({
+      database_id: DATABASE_ID,
+      filter: {
+        property: 'Order Number',
+        rich_text: {
+          equals: orderNumber
+        }
+      }
+    });
+    
+    if (existing.results.length > 0) {
+      return res.status(200).json({ 
+        message: 'Record already exists',
+        exists: true 
+      });
+    }
+    
+    // Extract boot and blade info from line items
+    let bootModel = '';
+    let bladeModel = '';
+    let size = '';
+    
+    orderData.lineItems?.forEach(item => {
+      const isBoots = item.title.toLowerCase().includes('boot') || 
+                      item.title.toLowerCase().includes('edea') ||
+                      item.title.toLowerCase().includes('risport') ||
+                      item.title.toLowerCase().includes('jackson');
+                      
+      const isBlades = item.title.toLowerCase().includes('blade') ||
+                       item.title.toLowerCase().includes('wilson') ||
+                       item.title.toLowerCase().includes('paramount');
+      
+      if (isBoots) {
+        bootModel = item.title;
+        size = item.variant || '';
+      }
+      if (isBlades) {
+        bladeModel = item.title;
+      }
+    });
+    
+    // Create new Notion record
+    const newPage = await notion.pages.create({
+      parent: { database_id: DATABASE_ID },
+      properties: {
+        'Order Number': {
+          rich_text: [{ text: { content: orderNumber } }]
+        },
+        'Customer Name': {
+          title: [{ text: { content: orderData.customerName || '' } }]
+        },
+        'Contact Details': {
+          rich_text: [{ text: { content: orderData.customerEmail || '' } }]
+        },
+        'Model of Boot': {
+          rich_text: [{ text: { content: bootModel } }]
+        },
+        'Size': {
+          rich_text: [{ text: { content: size } }]
+        },
+        'Status': {
+          select: { name: 'placed' }
+        },
+        'Boot Status': {
+          select: { name: 'Placed with Supplier' }
+        },
+        'Blade Status': {
+          select: { name: 'Placed with Supplier' }
+        },
+        'Last Reviewed': {
+          date: { start: new Date().toISOString().split('T')[0] }
+        }
+      }
+    });
+    
+    return res.status(200).json({ 
+      message: 'Notion record created',
+      pageId: newPage.id,
+      success: true
+    });
+    
+  } catch (error) {
+    console.error('Error creating Notion record:', error);
+    return res.status(500).json({ error: 'Failed to create Notion record' });
+  }
+});
+
 // Generate magic link
 app.post('/api/generate-link', async (req, res) => {
   const { orderNumber, apiKey } = req.body;
