@@ -182,17 +182,7 @@
             <div class="max-w-4xl mx-auto">
               <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
                 <h1 class="text-3xl font-bold text-gray-900 mb-2">Order Tracking</h1>
-                <div class="flex flex-wrap gap-4 text-sm text-gray-600">
-                  <span>Order ${data.orderNumber}</span>
-                  <span>•</span>
-                  <span>${data.customerName}</span>
-                  <span>•</span>
-                  <span>Placed ${new Date(data.orderDate).toLocaleDateString('en-GB', { 
-                    day: 'numeric', 
-                    month: 'long', 
-                    year: 'numeric' 
-                  })}</span>
-                </div>
+                <p class="text-gray-600">Track the status of your custom skate order below</p>
               </div>
 
               ${data.items.map(item => StatusTracker({ item })).join('')}
