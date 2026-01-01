@@ -118,19 +118,14 @@ async function getTrackingDataByOrder(orderNumber) {
     
     return {
       id: page.id,
-      orderNumber: props['Order Number']?.rich_text?.[0]?.text?.content,
+      orderNumber: props['Order Number']?.title?.[0]?.text?.content,
       bootModel: props['Model of Boot']?.rich_text?.[0]?.text?.content,
       size: props['Size']?.rich_text?.[0]?.text?.content,
-      customerName: props['Customer Name']?.title?.[0]?.text?.content,
-      contactDetails: props['Contact Details']?.email || props['Contact Details']?.rich_text?.[0]?.text?.content,
+      customerName: props['Customer Name']?.rich_text?.[0]?.text?.content,
+      contactDetails: props['Contact Details']?.rich_text?.[0]?.text?.content,
       internalStatus: props['Status']?.select?.name,
       bootStatus: props['Boot Status']?.select?.name,
-      bladeStatus: props['Blade Status']?.select?.name,
       bootNotes: props['Boot Notes']?.rich_text?.[0]?.text?.content || '',
-      bladeNotes: props['Blade Notes']?.rich_text?.[0]?.text?.content || '',
-      bootExpectedArrival: props['Boot Expected Arrival']?.date?.start,
-      bladeExpectedArrival: props['Blade Expected Arrival']?.date?.start,
-      lastReviewed: props['Last Reviewed']?.date?.start,
       supplier: props['Supplier']?.select?.name || props['Supplier']?.rich_text?.[0]?.text?.content
     };
   });
@@ -319,44 +314,13 @@ app.get('/api/track', async (req, res) => {
           status: mapStatusToKey(notionRecord.bootStatus),
           supplier: notionRecord.supplier,
           location: null,
-          estimatedArrival: notionRecord.bootExpectedArrival,
+          estimatedArrival: null,
           notes: notionRecord.bootNotes,
-          lastReviewed: notionRecord.lastReviewed ? 
-            new Date(notionRecord.lastReviewed).toLocaleDateString('en-GB', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric'
-            }) : 
-            new Date().toLocaleDateString('en-GB', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric'
-            })
-        });
-      }
-      
-      if (isBlades && notionRecord.bladeStatus) {
-        items.push({
-          id: `blade-${lineItem.id}`,
-          type: 'Blade',
-          model: lineItem.title,
-          size: lineItem.variant,
-          status: mapStatusToKey(notionRecord.bladeStatus),
-          supplier: notionRecord.supplier,
-          location: null,
-          estimatedArrival: notionRecord.bladeExpectedArrival,
-          notes: notionRecord.bladeNotes,
-          lastReviewed: notionRecord.lastReviewed ? 
-            new Date(notionRecord.lastReviewed).toLocaleDateString('en-GB', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric'
-            }) : 
-            new Date().toLocaleDateString('en-GB', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric'
-            })
+          lastReviewed: new Date().toLocaleDateString('en-GB', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+          })
         });
       }
     });
