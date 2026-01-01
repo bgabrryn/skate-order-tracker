@@ -158,14 +158,14 @@ app.get('/api/health', (req, res) => {
 
 // Create Notion record from Shopify order
 app.post('/api/create-notion-record', async (req, res) => {
-  const { orderNumber, apiKey, orderData } = req.body;
+  const { orderNumber, apiKey, customerName, customerEmail, lineItemTitles } = req.body;
   
   if (apiKey !== process.env.ADMIN_API_KEY) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   
-  if (!orderNumber || !orderData) {
-    return res.status(400).json({ error: 'Order number and data required' });
+  if (!orderNumber) {
+    return res.status(400).json({ error: 'Order number required' });
   }
   
   try {
@@ -187,29 +187,31 @@ app.post('/api/create-notion-record', async (req, res) => {
       });
     }
     
-    // Extract boot and blade info from line items
+    // Extract boot and blade info from line item titles (comma-separated string)
     let bootModel = '';
     let bladeModel = '';
-    let size = '';
     
-    orderData.lineItems?.forEach(item => {
-      const isBoots = item.title.toLowerCase().includes('boot') || 
-                      item.title.toLowerCase().includes('edea') ||
-                      item.title.toLowerCase().includes('risport') ||
-                      item.title.toLowerCase().includes('jackson');
-                      
-      const isBlades = item.title.toLowerCase().includes('blade') ||
-                       item.title.toLowerCase().includes('wilson') ||
-                       item.title.toLowerCase().includes('paramount');
+    if (lineItemTitles) {
+      const titles = lineItemTitles.split(',').map(t => t.trim());
       
-      if (isBoots) {
-        bootModel = item.title;
-        size = item.variant || '';
-      }
-      if (isBlades) {
-        bladeModel = item.title;
-      }
-    });
+      titles.forEach(title => {
+        const isBoots = title.toLowerCase().includes('boot') || 
+                        title.toLowerCase().includes('edea') ||
+                        title.toLowerCase().includes('risport') ||
+                        title.toLowerCase().includes('jackson');
+                        
+        const isBlades = title.toLowerCase().includes('blade') ||
+                         title.toLowerCase().includes('wilson') ||
+                         title.toLowerCase().includes('paramount');
+        
+        if (isBoots) {
+          bootModel = title;
+        }
+        if (isBlades) {
+          bladeModel = title;
+        }
+      });
+    }
     
     // Create new Notion record
     const newPage = await notion.pages.create({
@@ -219,16 +221,16 @@ app.post('/api/create-notion-record', async (req, res) => {
           rich_text: [{ text: { content: orderNumber } }]
         },
         'Customer Name': {
-          title: [{ text: { content: orderData.customerName || '' } }]
+          title: [{ text: { content: customerName || '' } }]
         },
         'Contact Details': {
-          rich_text: [{ text: { content: orderData.customerEmail || '' } }]
+          rich_text: [{ text: { content: customerEmail || '' } }]
         },
         'Model of Boot': {
           rich_text: [{ text: { content: bootModel } }]
         },
         'Size': {
-          rich_text: [{ text: { content: size } }]
+          rich_text: [{ text: { content: '' } }]
         },
         'Status': {
           select: { name: 'placed' }
