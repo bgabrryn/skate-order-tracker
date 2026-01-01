@@ -5,6 +5,7 @@ const { Client } = require('@notionhq/client');
 
 const app = express();
 const path = require('path');
+const { title } = require('process');
 
 app.use(express.json());
 app.use((req, res, next) => {
@@ -213,10 +214,10 @@ app.post('/api/create-notion-record', async (req, res) => {
       parent: { database_id: DATABASE_ID },
       properties: {
         'Order Number': {
-          rich_text: [{ text: { content: orderNumber } }]
+          title: [{ text: { content: orderNumber } }]
         },
         'Customer Name': {
-          title: [{ text: { content: customerName || '' } }]
+          rich_text: [{ text: { content: customerName || '' } }]
         },
         'Contact Details': {
           rich_text: [{ text: { content: customerEmail || '' } }]
