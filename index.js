@@ -232,9 +232,7 @@ app.post('/api/create-notion-record', async (req, res) => {
         'Size': {
           rich_text: [{ text: { content: '' } }]
         },
-        'Status': {
-          select: { name: 'placed' }
-        },
+
         'Boot Status': {
           select: { name: 'Placed with Supplier' }
         },
