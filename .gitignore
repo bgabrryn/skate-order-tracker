@@ -1,0 +1,30 @@
+# Sensitive API keys and secrets
+ADMIN_API_KEY
+CRON_SECRET
+NOTION_API_KEY
+NOTION_DATABASE_ID
+SECRET_KEY
+SHOPIFY_ACCESS_TOKEN
+SHOPIFY_DOMAIN
+
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
