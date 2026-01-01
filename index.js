@@ -125,7 +125,9 @@ async function getTrackingDataByOrder(orderNumber) {
       contactDetails: props['Contact Details']?.rich_text?.[0]?.text?.content,
       internalStatus: props['Status']?.select?.name,
       bootStatus: props['Boot Status']?.select?.name,
+      bladeStatus: props['Blade Status']?.select?.name,
       bootNotes: props['Boot Notes']?.rich_text?.[0]?.text?.content || '',
+      bladeNotes: props['Blade Notes']?.rich_text?.[0]?.text?.content || '',
       supplier: props['Supplier']?.select?.name || props['Supplier']?.rich_text?.[0]?.text?.content
     };
   });
