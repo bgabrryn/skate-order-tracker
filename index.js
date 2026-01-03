@@ -373,6 +373,7 @@ app.get('/api/track', async (req, res) => {
     
     // Debug logging to help diagnose status issues
     console.log('[DEBUG] Full notionRecord:', JSON.stringify(notionRecord, null, 2));
+    console.log('[DEBUG] Shopify lineItems:', JSON.stringify(shopifyData.lineItems, null, 2));
     if (notionRecord.bootStatus) {
       console.log(`[DEBUG] Boot Status from Notion: "${notionRecord.bootStatus}"`);
       console.log(`[DEBUG] Mapped Status Key: "${mapStatusToKey(notionRecord.bootStatus)}"`);
@@ -389,13 +390,17 @@ app.get('/api/track', async (req, res) => {
                        lineItem.title.toLowerCase().includes('wilson') ||
                        lineItem.title.toLowerCase().includes('paramount');
       
-      if (isBoots && notionRecord.bootStatus) {
+      console.log(`[DEBUG] Processing lineItem: "${lineItem.title}" - isBoots: ${isBoots}, bootStatus exists: ${!!notionRecord.bootStatus}`);
+      
+      if (isBoots) {
+        // Use bootStatus if available, otherwise default to 'placed'
+        const status = notionRecord.bootStatus ? mapStatusToKey(notionRecord.bootStatus) : 'placed';
         items.push({
           id: `boot-${lineItem.id}`,
           type: 'Boot',
           model: notionRecord.bootModel || lineItem.title,
           size: notionRecord.size || lineItem.variant,
-          status: mapStatusToKey(notionRecord.bootStatus),
+          status: status,
           supplier: notionRecord.supplier,
           location: null,
           estimatedArrival: null,
@@ -406,8 +411,13 @@ app.get('/api/track', async (req, res) => {
             year: 'numeric'
           })
         });
+        console.log(`[DEBUG] Added item with status: "${status}"`);
+      } else {
+        console.log(`[DEBUG] Skipping lineItem "${lineItem.title}" - not identified as boots`);
       }
     });
+    
+    console.log(`[DEBUG] Total items created: ${items.length}`);
     
     const responseData = {
       orderNumber: shopifyData.orderNumber,
