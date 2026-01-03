@@ -104,11 +104,12 @@ See you soon!`
 
         // Determine overall status (use the latest/most advanced status)
         const statusPriority = ['placed', 'not-in-uk', 'on-the-way', 'ready-to-try', 'collected'];
-
+        let currentStatus = 'placed';
         
         if (data.items && data.items.length > 0) {
           const statuses = data.items.map(item => item.status);
           console.log('[Frontend] All statuses found:', statuses);
+          console.log('[Frontend] Full items data:', JSON.stringify(data.items, null, 2));
           
           // Find the most advanced (latest) status in the journey
           // Reverse iterate through priority to find the highest status
@@ -121,9 +122,16 @@ See you soon!`
           }
           
           console.log('[Frontend] Selected currentStatus:', currentStatus);
+          console.log('[Frontend] Status content available:', statusContent[currentStatus]);
+        } else {
+          console.warn('[Frontend] No items found in data:', data);
         }
 
         const content = statusContent[currentStatus];
+        if (!content) {
+          console.error('[Frontend] No content found for status:', currentStatus);
+          console.error('[Frontend] Available statuses in statusContent:', Object.keys(statusContent));
+        }
         const lastReviewed = data.items[0]?.lastReviewed || 'Today';
 
         app.innerHTML = `
