@@ -116,6 +116,23 @@ async function getTrackingDataByOrder(orderNumber) {
   return response.results.map(page => {
     const props = page.properties;
     
+    // Format Last Reviewed date if it exists
+    let lastReviewed = null;
+    if (props['Last Reviewed']?.date?.start) {
+      const date = new Date(props['Last Reviewed'].date.start);
+      lastReviewed = date.toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+    }
+    
+    // Get boot status with fallback for debugging
+    const bootStatus = props['Boot Status']?.select?.name;
+    if (!bootStatus && props['Boot Status']) {
+      console.warn('[DEBUG] Boot Status property exists but select.name is null:', JSON.stringify(props['Boot Status']));
+    }
+    
     return {
       id: page.id,
       orderNumber: props['Order Number']?.title?.[0]?.text?.content,
@@ -124,16 +141,22 @@ async function getTrackingDataByOrder(orderNumber) {
       customerName: props['Customer Name']?.rich_text?.[0]?.text?.content,
       contactDetails: props['Contact Details']?.rich_text?.[0]?.text?.content,
       internalStatus: props['Status']?.select?.name,
-      bootStatus: props['Boot Status']?.select?.name,
+      bootStatus: bootStatus,
       bladeStatus: props['Blade Status']?.select?.name,
       bootNotes: props['Boot Notes']?.rich_text?.[0]?.text?.content || '',
       bladeNotes: props['Blade Notes']?.rich_text?.[0]?.text?.content || '',
-      supplier: props['Supplier']?.select?.name || props['Supplier']?.rich_text?.[0]?.text?.content
+      supplier: props['Supplier']?.select?.name || props['Supplier']?.rich_text?.[0]?.text?.content,
+      lastReviewed: lastReviewed
     };
   });
 }
 
 function mapStatusToKey(status) {
+  if (!status) return 'placed';
+  
+  // Normalize the status by trimming whitespace
+  const normalizedStatus = status.trim();
+  
   const mapping = {
     'Placed with Supplier': 'placed',
     'Not in UK': 'not-in-uk',
@@ -141,7 +164,23 @@ function mapStatusToKey(status) {
     'Ready to try on': 'ready-to-try',
     'Collected': 'collected'
   };
-  return mapping[status] || 'placed';
+  
+  // Try exact match first
+  if (mapping[normalizedStatus]) {
+    return mapping[normalizedStatus];
+  }
+  
+  // Try case-insensitive match
+  const lowerStatus = normalizedStatus.toLowerCase();
+  for (const [key, value] of Object.entries(mapping)) {
+    if (key.toLowerCase() === lowerStatus) {
+      return value;
+    }
+  }
+  
+  // Default fallback
+  console.warn(`Unknown status value: "${status}" - defaulting to "placed"`);
+  return 'placed';
 }
 
 // ============================================================================
@@ -299,6 +338,12 @@ app.get('/api/track', async (req, res) => {
     const items = [];
     const notionRecord = notionData[0];
     
+    // Debug logging to help diagnose status issues
+    if (notionRecord.bootStatus) {
+      console.log(`[DEBUG] Boot Status from Notion: "${notionRecord.bootStatus}"`);
+      console.log(`[DEBUG] Mapped Status Key: "${mapStatusToKey(notionRecord.bootStatus)}"`);
+    }
+    
     shopifyData.lineItems.forEach(lineItem => {
       const isBoots = lineItem.title.toLowerCase().includes('boot') || 
                       lineItem.title.toLowerCase().includes('edea') ||
@@ -319,7 +364,7 @@ app.get('/api/track', async (req, res) => {
           location: null,
           estimatedArrival: null,
           notes: notionRecord.bootNotes,
-          lastReviewed: new Date().toLocaleDateString('en-GB', {
+          lastReviewed: notionRecord.lastReviewed || new Date().toLocaleDateString('en-GB', {
             day: 'numeric',
             month: 'long',
             year: 'numeric'
