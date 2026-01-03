@@ -50,6 +50,13 @@ See you soon!`
     };
 
     function mapStatusToKey(status) {
+      // If status is already a key, return it as-is
+      const validKeys = ['placed', 'not-in-uk', 'on-the-way', 'ready-to-try', 'collected'];
+      if (validKeys.includes(status)) {
+        return status;
+      }
+      
+      // Otherwise, map from raw status string to key
       const mapping = {
         'Placed with Supplier': 'placed',
         'Not in UK': 'not-in-uk',
