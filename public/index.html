@@ -42,7 +42,7 @@ See you soon!`
       },
       'collected': {
         title: 'Enjoy Your Skates!',
-        description: `Thank you for your order. We hope you love your new skates! If you have any issues with fit, please get in touch within 30 days.`
+        description: `Thanks for shopping with us. Remember, if you have any issues with the fit – we'll fix it. All skates are covered by our Love Skate Guarantee.`
       }
     };
 
@@ -112,10 +112,17 @@ See you soon!`
             <div class="max-w-2xl w-full">
               <!-- Logo -->
               <div class="text-center mb-8">
-                <h1 class="text-5xl md:text-6xl font-serif text-yellow-400 mb-4">
+                <img 
+                  src="/logo.svg" 
+                  alt="Boot & Blade" 
+                  class="mx-auto mb-4 h-auto"
+                  style="width: 96px;"
+                  onerror="this.onerror=null; this.src='/logo.svg'; this.onerror=function(){this.style.display='none'; document.getElementById('logo-fallback').style.display='block';}"
+                >
+                <h1 id="logo-fallback" class="text-5xl md:text-6xl font-serif text-yellow-400 mb-4" style="display:none;">
                   Boot<br class="md:hidden">&<span class="md:inline">Blade</span>
                 </h1>
-                <h2 class="text-2xl md:text-3xl font-light mb-2">Are my skates here yet?</h2>
+                <h2 class="text-3xl md:text-3xl font-bold mb-2 pt-4 pb-4">Are my skates here yet?</h2>
               </div>
 
               <!-- Status Card -->
@@ -139,7 +146,7 @@ See you soon!`
                 ${currentStatus === 'ready-to-try' ? `
                   <div class="mt-8">
                     <a 
-                      href="https://calendly.com/your-calendly-link" 
+                      href="https://calendly.com/thebootandblade/collect" 
                       target="_blank"
                       rel="noopener noreferrer"
                       class="block w-full text-center bg-black text-white py-4 rounded-2xl font-semibold hover:bg-gray-800 transition text-lg"
@@ -153,7 +160,7 @@ See you soon!`
               <!-- Footer -->
               <div class="text-center mt-8 text-gray-400 text-sm">
                 <p>Questions about your order?</p>
-                <a href="mailto:support@bootandblade.com" class="text-yellow-400 hover:text-yellow-300 transition">
+                <a href="mailto:bradley@thebootandblade.com" class="text-yellow-400 hover:text-yellow-300 transition">
                   Get in touch with us
                 </a>
               </div>
