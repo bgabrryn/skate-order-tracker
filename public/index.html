@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Order Tracking - Boot & Blade</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -78,30 +81,46 @@ See you soon!`
           throw new Error('No tracking token provided');
         }
 
-        const response = await fetch(`/api/track?token=${token}`);
+        // Add cache-busting timestamp to prevent browser caching
+        const timestamp = new Date().getTime();
+        const response = await fetch(`/api/track?token=${token}&_t=${timestamp}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
+        });
         const data = await response.json();
+        
+        // Debug logging
+        console.log('[Frontend] API Response:', data);
+        console.log('[Frontend] Items:', data.items);
+        if (data.items && data.items.length > 0) {
+          console.log('[Frontend] Item statuses:', data.items.map(item => item.status));
+        }
         
         if (data.error) {
           throw new Error(data.error);
         }
 
-        // Determine overall status (use the earliest status if items differ)
+        // Determine overall status (use the latest/most advanced status)
         const statusPriority = ['placed', 'not-in-uk', 'on-the-way', 'ready-to-try', 'collected'];
         let currentStatus = 'placed';
         
         if (data.items && data.items.length > 0) {
           const statuses = data.items.map(item => item.status);
-          // Find the earliest status in the journey
-          for (const status of statusPriority) {
-            if (statuses.includes(status) && status !== 'collected') {
+          console.log('[Frontend] All statuses found:', statuses);
+          
+          // Find the most advanced (latest) status in the journey
+          // Reverse iterate through priority to find the highest status
+          for (let i = statusPriority.length - 1; i >= 0; i--) {
+            const status = statusPriority[i];
+            if (statuses.includes(status)) {
               currentStatus = status;
               break;
             }
           }
-          // If all collected, show collected
-          if (statuses.every(s => s === 'collected')) {
-            currentStatus = 'collected';
-          }
+          
+          console.log('[Frontend] Selected currentStatus:', currentStatus);
         }
 
         const content = statusContent[currentStatus];

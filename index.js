@@ -409,12 +409,20 @@ app.get('/api/track', async (req, res) => {
       }
     });
     
-    return res.status(200).json({
+    const responseData = {
       orderNumber: shopifyData.orderNumber,
       customerName: shopifyData.customerName,
       orderDate: shopifyData.orderDate,
       items
-    });
+    };
+    
+    // Debug: Log what we're sending to frontend
+    console.log('[DEBUG] Sending response to frontend:', JSON.stringify(responseData, null, 2));
+    if (items.length > 0) {
+      console.log('[DEBUG] Item status in response:', items[0].status);
+    }
+    
+    return res.status(200).json(responseData);
     
   } catch (error) {
     console.error('Error fetching tracking data:', error);
