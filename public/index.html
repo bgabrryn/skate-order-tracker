@@ -107,7 +107,8 @@ See you soon!`
         let currentStatus = 'placed';
         
         if (data.items && data.items.length > 0) {
-          const statuses = data.items.map(item => item.status);
+          // Map raw status strings to their keys
+          const statuses = data.items.map(item => mapStatusToKey(item.status));
           console.log('[Frontend] All statuses found:', statuses);
           console.log('[Frontend] Full items data:', JSON.stringify(data.items, null, 2));
           
