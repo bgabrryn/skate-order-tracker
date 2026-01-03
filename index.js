@@ -105,7 +105,7 @@ async function getTrackingDataByOrder(orderNumber) {
     database_id: DATABASE_ID,
     filter: {
       property: 'Order Number',
-      rich_text: {
+      title: {
         equals: orderNumber
       }
     }
@@ -238,7 +238,7 @@ app.post('/api/create-notion-record', async (req, res) => {
       database_id: DATABASE_ID,
       filter: {
         property: 'Order Number',
-        rich_text: {
+        title: {
           equals: orderNumber
         }
       }
