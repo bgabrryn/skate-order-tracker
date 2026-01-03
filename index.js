@@ -116,6 +116,9 @@ async function getTrackingDataByOrder(orderNumber) {
   return response.results.map(page => {
     const props = page.properties;
     
+    // Debug: Log all property names to help identify mismatches
+    console.log('[DEBUG] Available Notion properties:', Object.keys(props));
+    
     // Format Last Reviewed date if it exists
     let lastReviewed = null;
     if (props['Last Reviewed']?.date?.start) {
@@ -127,10 +130,35 @@ async function getTrackingDataByOrder(orderNumber) {
       });
     }
     
-    // Get boot status with fallback for debugging
-    const bootStatus = props['Boot Status']?.select?.name;
-    if (!bootStatus && props['Boot Status']) {
-      console.warn('[DEBUG] Boot Status property exists but select.name is null:', JSON.stringify(props['Boot Status']));
+    // Get boot status with comprehensive debugging and fallback
+    let bootStatus = props['Boot Status']?.select?.name;
+    
+    // Debug logging
+    if (props['Boot Status']) {
+      console.log('[DEBUG] Boot Status property structure:', JSON.stringify(props['Boot Status'], null, 2));
+      console.log('[DEBUG] Boot Status value:', bootStatus);
+      
+      // If select.name is null but property exists, log the full structure
+      if (!bootStatus && props['Boot Status'].select === null) {
+        console.warn('[DEBUG] Boot Status select is null - property may not be a Select type');
+      }
+    } else {
+      console.warn('[DEBUG] Boot Status property not found in Notion page');
+      // Try to find similar property names (case-insensitive, with/without spaces)
+      const allProps = Object.keys(props);
+      const similarProps = allProps.filter(key => {
+        const lowerKey = key.toLowerCase().replace(/\s+/g, '');
+        return lowerKey.includes('boot') && lowerKey.includes('status');
+      });
+      if (similarProps.length > 0) {
+        console.warn('[DEBUG] Found similar properties:', similarProps);
+        // Try the first similar property as fallback
+        const fallbackProp = props[similarProps[0]];
+        if (fallbackProp?.select?.name) {
+          console.warn(`[DEBUG] Using fallback property "${similarProps[0]}" with value:`, fallbackProp.select.name);
+          bootStatus = fallbackProp.select.name;
+        }
+      }
     }
     
     return {
@@ -314,6 +342,11 @@ app.post('/api/generate-link', async (req, res) => {
 
 // Track order
 app.get('/api/track', async (req, res) => {
+  // Prevent caching to ensure fresh data from Notion
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  
   const { token } = req.query;
   
   if (!token) {
@@ -339,9 +372,12 @@ app.get('/api/track', async (req, res) => {
     const notionRecord = notionData[0];
     
     // Debug logging to help diagnose status issues
+    console.log('[DEBUG] Full notionRecord:', JSON.stringify(notionRecord, null, 2));
     if (notionRecord.bootStatus) {
       console.log(`[DEBUG] Boot Status from Notion: "${notionRecord.bootStatus}"`);
       console.log(`[DEBUG] Mapped Status Key: "${mapStatusToKey(notionRecord.bootStatus)}"`);
+    } else {
+      console.warn('[DEBUG] bootStatus is null or undefined in notionRecord');
     }
     
     shopifyData.lineItems.forEach(lineItem => {
