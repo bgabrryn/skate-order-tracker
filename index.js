@@ -271,9 +271,31 @@ app.post('/api/create-notion-record', async (req, res) => {
     });
     
     if (existing.results.length > 0) {
+      // Record exists - optionally update it with tracking link if missing
+      const existingPage = existing.results[0];
+      const token = generateMagicToken(orderNumber);
+      const trackingUrl = `${process.env.BASE_URL}/track?token=${token}`;
+      
+      // Try to update with tracking link (if property exists)
+      try {
+        await notion.pages.update({
+          page_id: existingPage.id,
+          properties: {
+            'Tracking Link': {
+              url: trackingUrl
+            }
+          }
+        });
+        console.log('[DEBUG] Updated existing record with tracking link');
+      } catch (updateError) {
+        // If property doesn't exist, that's okay - just log it
+        console.log('[DEBUG] Could not update tracking link (property may not exist):', updateError.message);
+      }
+      
       return res.status(200).json({ 
         message: 'Record already exists',
-        exists: true 
+        exists: true,
+        trackingUrl: trackingUrl
       });
     }
     
@@ -306,6 +328,11 @@ app.post('/api/create-notion-record', async (req, res) => {
       });
     }
     
+    // Generate tracking link
+    const token = generateMagicToken(orderNumber);
+    const trackingUrl = `${process.env.BASE_URL}/track?token=${token}`;
+    console.log('[DEBUG] Generated tracking URL:', trackingUrl);
+    
     // Prepare properties for Notion
     const notionProperties = {
       'Order Number': {
@@ -331,6 +358,14 @@ app.post('/api/create-notion-record', async (req, res) => {
       }
     };
     
+    // Add tracking link if the property exists in Notion (try common property names)
+    // You may need to adjust the property name to match your Notion database
+    const trackingLinkPropertyNames = ['Tracking Link', 'Tracking URL', 'Tracking', 'Order Tracking Link'];
+    // We'll try to add it, but if the property doesn't exist, Notion will just ignore it
+    notionProperties['Tracking Link'] = {
+      url: trackingUrl
+    };
+    
     console.log('[DEBUG] Creating Notion record with properties:', JSON.stringify(notionProperties, null, 2));
     
     // Create new Notion record
@@ -342,6 +377,7 @@ app.post('/api/create-notion-record', async (req, res) => {
     return res.status(200).json({ 
       message: 'Notion record created',
       pageId: newPage.id,
+      trackingUrl: trackingUrl,
       success: true
     });
     
