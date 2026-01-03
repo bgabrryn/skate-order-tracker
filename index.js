@@ -257,6 +257,7 @@ app.post('/api/create-notion-record', async (req, res) => {
     
     if (lineItemTitles) {
       const titles = lineItemTitles.split(',').map(t => t.trim());
+      console.log('[DEBUG] Processing lineItemTitles:', titles);
       
       titles.forEach(title => {
         const isBoots = title.toLowerCase().includes('boot') || 
@@ -270,43 +271,49 @@ app.post('/api/create-notion-record', async (req, res) => {
         
         if (isBoots) {
           bootModel = title;
+          console.log('[DEBUG] Identified boot model:', bootModel);
         }
         if (isBlades) {
           bladeModel = title;
+          console.log('[DEBUG] Identified blade model:', bladeModel);
         }
       });
     }
     
+    // Prepare properties for Notion
+    const notionProperties = {
+      'Order Number': {
+        rich_text: [{ text: { content: orderNumber } }]
+      },
+      'Customer Name': {
+        title: [{ text: { content: customerName || '' } }]
+      },
+      'Contact Details': {
+        rich_text: [{ text: { content: customerEmail || '' } }]
+      },
+      'Model of Boot': {
+        rich_text: [{ text: { content: bootModel } }]
+      },
+      'Size': {
+        rich_text: [{ text: { content: '' } }]
+      },
+      'Boot Status': {
+        select: { name: 'Placed with Supplier' }
+      },
+      'Blade Status': {
+        select: { name: 'Placed with Supplier' }
+      },
+      'Last Reviewed': {
+        date: { start: new Date().toISOString().split('T')[0] }
+      }
+    };
+    
+    console.log('[DEBUG] Creating Notion record with properties:', JSON.stringify(notionProperties, null, 2));
+    
     // Create new Notion record
     const newPage = await notion.pages.create({
       parent: { database_id: DATABASE_ID },
-      properties: {
-        'Order Number': {
-          rich_text: [{ text: { content: orderNumber } }]
-        },
-        'Customer Name': {
-          title: [{ text: { content: customerName || '' } }]
-        },
-        'Contact Details': {
-          rich_text: [{ text: { content: customerEmail || '' } }]
-        },
-        'Model of Boot': {
-          rich_text: [{ text: { content: bootModel } }]
-        },
-        'Size': {
-          rich_text: [{ text: { content: '' } }]
-        },
-
-        'Boot Status': {
-          select: { name: 'Placed with Supplier' }
-        },
-        'Blade Status': {
-          select: { name: 'Placed with Supplier' }
-        },
-        'Last Reviewed': {
-          date: { start: new Date().toISOString().split('T')[0] }
-        }
-      }
+      properties: notionProperties
     });
     
     return res.status(200).json({ 
@@ -317,7 +324,18 @@ app.post('/api/create-notion-record', async (req, res) => {
     
   } catch (error) {
     console.error('Error creating Notion record:', error);
-    return res.status(500).json({ error: 'Failed to create Notion record' });
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      status: error.status,
+      body: error.body,
+      stack: error.stack
+    });
+    return res.status(500).json({ 
+      error: 'Failed to create Notion record',
+      details: error.message || 'Unknown error',
+      code: error.code
+    });
   }
 });
 
