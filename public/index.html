@@ -151,7 +151,7 @@ See you soon!`
           console.error('[Frontend] No content found for status:', currentStatus);
           console.error('[Frontend] Available statuses in statusContent:', Object.keys(statusContent));
         }
-        const lastReviewed = data.items[0]?.lastReviewed || 'Today';
+        const lastReviewed = (data.items && data.items.length > 0 && data.items[0].lastReviewed) ? data.items[0].lastReviewed : 'Today';
 
         app.innerHTML = `
           <div class="min-h-screen px-4 py-8 md:py-16 flex flex-col items-center justify-center fade-in">
@@ -179,15 +179,17 @@ See you soon!`
                 <p class="text-gray-700 whitespace-pre-line leading-relaxed mb-8">${content.description}</p>
 
                 <!-- Your Order Section -->
+                ${data.items && data.items.length > 0 ? `
                 <div class="border-t border-gray-300 pt-6">
                   <h4 class="text-lg font-semibold mb-4 text-gray-800">Your Order</h4>
                   ${data.items.map(item => `
                     <div class="mb-4">
-                      <p class="font-semibold text-gray-900">${item.model}</p>
+                      <p class="font-semibold text-gray-900">${item.model || 'Order item'}</p>
                       ${item.size ? `<p class="text-gray-600">Size ${item.size}</p>` : ''}
                     </div>
                   `).join('')}
                 </div>
+                ` : ''}
 
                 ${currentStatus === 'ready-to-try' ? `
                   <div class="mt-8">

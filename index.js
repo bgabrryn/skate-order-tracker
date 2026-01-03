@@ -101,7 +101,14 @@ async function getOrderLineItems(orderNumber) {
 }
 
 async function getTrackingDataByOrder(orderNumber) {
-  const response = await notion.databases.query({
+  // Normalize order number - try both with and without # prefix
+  const queryOrderNumber = orderNumber.startsWith('#') ? orderNumber : `#${orderNumber}`;
+  
+  console.log('[DEBUG] Querying Notion for order number:', orderNumber);
+  console.log('[DEBUG] Also trying with # prefix:', queryOrderNumber);
+  
+  // Try with original format first
+  let response = await notion.databases.query({
     database_id: DATABASE_ID,
     filter: {
       property: 'Order Number',
@@ -111,7 +118,26 @@ async function getTrackingDataByOrder(orderNumber) {
     }
   });
   
-  if (response.results.length === 0) return null;
+  // If no results, try with # prefix
+  if (response.results.length === 0 && !orderNumber.startsWith('#')) {
+    console.log('[DEBUG] No results with original format, trying with # prefix');
+    response = await notion.databases.query({
+      database_id: DATABASE_ID,
+      filter: {
+        property: 'Order Number',
+        title: {
+          equals: queryOrderNumber
+        }
+      }
+    });
+  }
+  
+  if (response.results.length === 0) {
+    console.warn('[DEBUG] No Notion records found for order:', orderNumber, 'or', queryOrderNumber);
+    return null;
+  }
+  
+  console.log(`[DEBUG] Found ${response.results.length} record(s) in Notion`);
   
   return response.results.map(page => {
     const props = page.properties;
@@ -379,12 +405,27 @@ app.get('/api/track', async (req, res) => {
       getTrackingDataByOrder(orderNumber)
     ]);
     
-    if (!shopifyData || !notionData) {
-      return res.status(404).json({ error: 'Order not found' });
+    console.log('[DEBUG] shopifyData:', shopifyData ? 'found' : 'not found');
+    console.log('[DEBUG] notionData:', notionData ? `${notionData.length} records` : 'not found');
+    console.log('[DEBUG] orderNumber being queried:', orderNumber);
+    
+    if (!shopifyData) {
+      console.warn('[DEBUG] Shopify data not found for order:', orderNumber);
+      return res.status(404).json({ error: 'Order not found in Shopify' });
+    }
+    
+    if (!notionData || notionData.length === 0) {
+      console.warn('[DEBUG] Notion data not found for order:', orderNumber);
+      return res.status(404).json({ error: 'Order not found in tracking database' });
     }
     
     const items = [];
     const notionRecord = notionData[0];
+    
+    if (!notionRecord) {
+      console.error('[DEBUG] notionRecord is undefined');
+      return res.status(404).json({ error: 'Tracking record not found' });
+    }
     
     // Debug logging to help diagnose status issues
     console.log('[DEBUG] Full notionRecord:', JSON.stringify(notionRecord, null, 2));
