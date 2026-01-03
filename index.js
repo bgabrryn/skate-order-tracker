@@ -437,41 +437,89 @@ app.get('/api/track', async (req, res) => {
       console.warn('[DEBUG] bootStatus is null or undefined in notionRecord');
     }
     
-    shopifyData.lineItems.forEach(lineItem => {
-      const isBoots = lineItem.title.toLowerCase().includes('boot') || 
-                      lineItem.title.toLowerCase().includes('edea') ||
-                      lineItem.title.toLowerCase().includes('risport');
-                      
-      const isBlades = lineItem.title.toLowerCase().includes('blade') ||
-                       lineItem.title.toLowerCase().includes('wilson') ||
-                       lineItem.title.toLowerCase().includes('paramount');
+    // Create items from Notion record (source of truth for tracking)
+    // If Notion has boot data, create an item from it
+    if (notionRecord.bootModel || notionRecord.bootStatus) {
+      // Use bootStatus if available, otherwise default to 'placed'
+      const status = notionRecord.bootStatus ? mapStatusToKey(notionRecord.bootStatus) : 'placed';
       
-      console.log(`[DEBUG] Processing lineItem: "${lineItem.title}" - isBoots: ${isBoots}, bootStatus exists: ${!!notionRecord.bootStatus}`);
+      // Try to get model from Notion first, then fall back to Shopify line items
+      let bootModel = notionRecord.bootModel;
+      let bootSize = notionRecord.size;
       
-      if (isBoots) {
-        // Use bootStatus if available, otherwise default to 'placed'
-        const status = notionRecord.bootStatus ? mapStatusToKey(notionRecord.bootStatus) : 'placed';
-        items.push({
-          id: `boot-${lineItem.id}`,
-          type: 'Boot',
-          model: notionRecord.bootModel || lineItem.title,
-          size: notionRecord.size || lineItem.variant,
-          status: status,
-          supplier: notionRecord.supplier,
-          location: null,
-          estimatedArrival: null,
-          notes: notionRecord.bootNotes,
-          lastReviewed: notionRecord.lastReviewed || new Date().toLocaleDateString('en-GB', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-          })
-        });
-        console.log(`[DEBUG] Added item with status: "${status}"`);
-      } else {
-        console.log(`[DEBUG] Skipping lineItem "${lineItem.title}" - not identified as boots`);
+      // If Notion doesn't have model, try to find it from Shopify line items
+      if (!bootModel && shopifyData.lineItems && shopifyData.lineItems.length > 0) {
+        const bootLineItem = shopifyData.lineItems.find(item => 
+          item.title.toLowerCase().includes('boot') || 
+          item.title.toLowerCase().includes('edea') ||
+          item.title.toLowerCase().includes('risport') ||
+          item.title.toLowerCase().includes('jackson')
+        );
+        if (bootLineItem) {
+          bootModel = bootLineItem.title;
+          if (!bootSize) {
+            bootSize = bootLineItem.variant;
+          }
+        }
       }
-    });
+      
+      // Fallback to first line item if still no model
+      if (!bootModel && shopifyData.lineItems && shopifyData.lineItems.length > 0) {
+        bootModel = shopifyData.lineItems[0].title;
+        if (!bootSize) {
+          bootSize = shopifyData.lineItems[0].variant;
+        }
+      }
+      
+      items.push({
+        id: `boot-${notionRecord.id || 'default'}`,
+        type: 'Boot',
+        model: bootModel || 'Order item',
+        size: bootSize,
+        status: status,
+        supplier: notionRecord.supplier,
+        location: null,
+        estimatedArrival: null,
+        notes: notionRecord.bootNotes,
+        lastReviewed: notionRecord.lastReviewed || new Date().toLocaleDateString('en-GB', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        })
+      });
+      console.log(`[DEBUG] Added item from Notion record with status: "${status}"`);
+      console.log(`[DEBUG] Item details - model: "${bootModel}", size: "${bootSize}"`);
+    } else {
+      console.warn('[DEBUG] No boot data in Notion record, trying to create from Shopify line items');
+      
+      // Fallback: create items from Shopify line items if Notion has no boot data
+      shopifyData.lineItems.forEach(lineItem => {
+        const isBoots = lineItem.title.toLowerCase().includes('boot') || 
+                        lineItem.title.toLowerCase().includes('edea') ||
+                        lineItem.title.toLowerCase().includes('risport') ||
+                        lineItem.title.toLowerCase().includes('jackson');
+        
+        if (isBoots) {
+          items.push({
+            id: `boot-${lineItem.id}`,
+            type: 'Boot',
+            model: lineItem.title,
+            size: lineItem.variant,
+            status: 'placed',
+            supplier: null,
+            location: null,
+            estimatedArrival: null,
+            notes: '',
+            lastReviewed: new Date().toLocaleDateString('en-GB', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+            })
+          });
+          console.log(`[DEBUG] Added item from Shopify line item: "${lineItem.title}"`);
+        }
+      });
+    }
     
     console.log(`[DEBUG] Total items created: ${items.length}`);
     
