@@ -3,148 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Order Tracking - Figure Skate Shop</title>
+  <title>Order Tracking - Boot & Blade</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-    .animate-pulse {
-      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    .fade-in {
+      animation: fadeIn 0.5s ease-out;
     }
   </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+<body class="bg-black min-h-screen text-white">
   <div id="app"></div>
 
   <script>
-    const stages = [
-      { key: "placed", label: "Order Placed", description: "with supplier" },
-      { key: "not-in-uk", label: "Shipping to UK", description: "from international warehouse" },
-      { key: "on-the-way", label: "On the Way", description: "to our store" },
-      { key: "ready-to-try", label: "Ready to Try On", description: "in store now" },
-      { key: "collected", label: "Collected", description: "enjoy your skates!" }
-    ];
+    const statusContent = {
+      'placed': {
+        title: 'Your Order Has Been Placed',
+        description: `We've placed your order with the UK warehouse.
+If the skates are available, they should be with us next week.
+If they're not available in the UK, there may be a longer wait – we'll be in touch if this is the case.`
+      },
+      'not-in-uk': {
+        title: 'On The Way to the UK',
+        description: `Your skates weren't available in the UK, but we've requested them to be shipped to us. The timeline is usually 2-3 weeks for this – we'll be in touch if it's any different.`
+      },
+      'on-the-way': {
+        title: 'On The Way to the UK',
+        description: `Your skates weren't available in the UK, but we've requested them to be shipped to us. The timeline is usually 2-3 weeks for this – we'll be in touch if it's any different.`
+      },
+      'ready-to-try': {
+        title: 'Your Skates Have Arrived!',
+        description: `Your skates are in-store and ready to try on. Check your email for a confirmation, and the appointment booking link.
 
-    const icons = {
-      placed: "📦",
-      "not-in-uk": "📍",
-      "on-the-way": "🚚",
-      "ready-to-try": "🏪",
-      collected: "✅"
+See you soon!`
+      },
+      'collected': {
+        title: 'Enjoy Your Skates!',
+        description: `Thank you for your order. We hope you love your new skates! If you have any issues with fit, please get in touch within 30 days.`
+      }
     };
 
-    function StatusTracker({ item }) {
-      const currentStageIndex = stages.findIndex(s => s.key === item.status);
-      
-      return `
-        <div class="mb-8">
-          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div class="mb-6">
-              <div class="flex justify-between items-start mb-2">
-                <div>
-                  <h3 class="text-xl font-semibold text-gray-900">${item.model}</h3>
-                  <p class="text-sm text-gray-600">Size ${item.size} • ${item.type}</p>
-                </div>
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  ${stages[currentStageIndex]?.label}
-                </span>
-              </div>
-              <p class="text-xs text-gray-500">Last reviewed: ${item.lastReviewed}</p>
-            </div>
-
-            <div class="relative mb-8">
-              <div class="flex justify-between">
-                ${stages.map((stage, index) => {
-                  const isComplete = index < currentStageIndex;
-                  const isCurrent = index === currentStageIndex;
-                  
-                  return `
-                    <div class="flex flex-col items-center flex-1 relative">
-                      ${index < stages.length - 1 ? `
-                        <div class="absolute top-6 left-1/2 w-full h-0.5 ${isComplete ? 'bg-green-500' : 'bg-gray-200'}" style="transform: translateY(-50%);"></div>
-                      ` : ''}
-                      
-                      <div class="relative z-10 w-12 h-12 rounded-full flex items-center justify-center mb-2 text-2xl ${
-                        isComplete ? 'bg-green-500 text-white' :
-                        isCurrent ? 'bg-blue-500 text-white animate-pulse' :
-                        'bg-gray-200'
-                      }">
-                        ${icons[stage.key]}
-                      </div>
-                      
-                      <div class="text-center">
-                        <p class="text-xs font-medium ${
-                          isCurrent ? 'text-blue-600' : 
-                          isComplete ? 'text-gray-900' : 
-                          'text-gray-400'
-                        }">
-                          ${stage.label}
-                        </p>
-                      </div>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            </div>
-
-            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
-              <p class="text-sm font-medium text-blue-900 mb-1">
-                ${stages[currentStageIndex]?.label}
-              </p>
-              <p class="text-sm text-blue-700">
-                ${item.status === "placed" && item.supplier ? `Order placed with ${item.supplier}` : ''}
-                ${item.status === "not-in-uk" && item.location ? `Being shipped from ${item.location}` : ''}
-                ${item.status === "on-the-way" ? "Your order is on the way to our store" : ''}
-                ${item.status === "ready-to-try" ? "Ready for your fitting appointment" : ''}
-                ${item.status === "collected" ? "Thank you for your order!" : ''}
-              </p>
-              
-              ${item.estimatedArrival && item.status !== "collected" ? `
-                <p class="text-sm text-blue-600 mt-2">
-                  Expected arrival: ${new Date(item.estimatedArrival).toLocaleDateString('en-GB', { 
-                    day: 'numeric', 
-                    month: 'long', 
-                    year: 'numeric' 
-                  })}
-                </p>
-              ` : ''}
-            </div>
-
-            ${item.notes ? `
-              <div class="mt-4 p-4 bg-gray-50 rounded-lg border-l-4 border-gray-300">
-                <p class="text-sm text-gray-700">${item.notes}</p>
-              </div>
-            ` : ''}
-
-            ${item.status === "collected" ? `
-              <div class="mt-6 space-y-3">
-                <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <div class="flex items-start">
-                    <span class="text-2xl mr-2">✨</span>
-                    <div>
-                      <p class="text-sm font-medium text-green-900 mb-1">Love Skate Guarantee</p>
-                      <p class="text-sm text-green-700">
-                        We want you to love your new skates! If you experience any fit issues, please get in touch within 30 days.
-                      </p>
-                      <a href="#" class="text-sm text-green-800 underline mt-2 inline-block">
-                        Learn more about our guarantee
-                      </a>
-                    </div>
-                  </div>
-                </div>
-                <a 
-                  href="mailto:support@yourstore.com" 
-                  class="block w-full text-center bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700 transition"
-                >
-                  Contact Us About Fit Issues
-                </a>
-              </div>
-            ` : ''}
-          </div>
-        </div>
-      `;
+    function mapStatusToKey(status) {
+      const mapping = {
+        'Placed with Supplier': 'placed',
+        'Not in UK': 'not-in-uk',
+        'On the way': 'on-the-way',
+        'Ready to try on': 'ready-to-try',
+        'Collected': 'collected'
+      };
+      return mapping[status] || 'placed';
     }
 
     async function loadOrderData() {
@@ -154,8 +64,8 @@
       app.innerHTML = `
         <div class="min-h-screen flex items-center justify-center">
           <div class="text-center">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p class="text-gray-600">Loading your order...</p>
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto mb-4"></div>
+            <p class="text-gray-400">Loading your order...</p>
           </div>
         </div>
       `;
@@ -175,38 +85,75 @@
           throw new Error(data.error);
         }
 
-        const allItemsReady = data.items.every(item => item.status === "ready-to-try");
+        // Determine overall status (use the earliest status if items differ)
+        const statusPriority = ['placed', 'not-in-uk', 'on-the-way', 'ready-to-try', 'collected'];
+        let currentStatus = 'placed';
+        
+        if (data.items && data.items.length > 0) {
+          const statuses = data.items.map(item => item.status);
+          // Find the earliest status in the journey
+          for (const status of statusPriority) {
+            if (statuses.includes(status) && status !== 'collected') {
+              currentStatus = status;
+              break;
+            }
+          }
+          // If all collected, show collected
+          if (statuses.every(s => s === 'collected')) {
+            currentStatus = 'collected';
+          }
+        }
+
+        const content = statusContent[currentStatus];
+        const lastReviewed = data.items[0]?.lastReviewed || 'Today';
 
         app.innerHTML = `
-          <div class="py-8 px-4">
-            <div class="max-w-4xl mx-auto">
-              <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">Order Tracking</h1>
-                <p class="text-gray-600">Track the status of your custom skate order below</p>
+          <div class="min-h-screen px-4 py-8 md:py-16 flex flex-col items-center justify-center fade-in">
+            <div class="max-w-2xl w-full">
+              <!-- Logo -->
+              <div class="text-center mb-8">
+                <h1 class="text-5xl md:text-6xl font-serif text-yellow-400 mb-4">
+                  Boot<br class="md:hidden">&<span class="md:inline">Blade</span>
+                </h1>
+                <h2 class="text-2xl md:text-3xl font-light mb-2">Are my skates here yet?</h2>
               </div>
 
-              ${data.items.map(item => StatusTracker({ item })).join('')}
+              <!-- Status Card -->
+              <div class="bg-gray-100 text-gray-900 rounded-3xl p-8 md:p-10 shadow-2xl">
+                <p class="text-sm text-gray-600 mb-6">Last Updated ${lastReviewed}</p>
+                
+                <h3 class="text-2xl md:text-3xl font-bold mb-4">${content.title}</h3>
+                <p class="text-gray-700 whitespace-pre-line leading-relaxed mb-8">${content.description}</p>
 
-              ${allItemsReady ? `
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                  <div class="text-center">
-                    <h3 class="text-xl font-semibold text-gray-900 mb-2">All Items Ready!</h3>
-                    <p class="text-gray-600 mb-4">Your complete order is in store and ready for fitting</p>
+                <!-- Your Order Section -->
+                <div class="border-t border-gray-300 pt-6">
+                  <h4 class="text-lg font-semibold mb-4 text-gray-800">Your Order</h4>
+                  ${data.items.map(item => `
+                    <div class="mb-4">
+                      <p class="font-semibold text-gray-900">${item.model}</p>
+                      ${item.size ? `<p class="text-gray-600">Size ${item.size}</p>` : ''}
+                    </div>
+                  `).join('')}
+                </div>
+
+                ${currentStatus === 'ready-to-try' ? `
+                  <div class="mt-8">
                     <a 
                       href="https://calendly.com/your-calendly-link" 
                       target="_blank"
                       rel="noopener noreferrer"
-                      class="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 transition"
+                      class="block w-full text-center bg-black text-white py-4 rounded-2xl font-semibold hover:bg-gray-800 transition text-lg"
                     >
                       Book Your Fitting Appointment
                     </a>
                   </div>
-                </div>
-              ` : ''}
+                ` : ''}
+              </div>
 
-              <div class="text-center mt-8 text-sm text-gray-600">
+              <!-- Footer -->
+              <div class="text-center mt-8 text-gray-400 text-sm">
                 <p>Questions about your order?</p>
-                <a href="mailto:support@yourstore.com" class="text-blue-600 underline">
+                <a href="mailto:support@bootandblade.com" class="text-yellow-400 hover:text-yellow-300 transition">
                   Get in touch with us
                 </a>
               </div>
@@ -217,9 +164,9 @@
       } catch (error) {
         app.innerHTML = `
           <div class="min-h-screen flex items-center justify-center p-4">
-            <div class="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
-              <p class="text-red-600 mb-4">${error.message}</p>
-              <a href="mailto:support@yourstore.com" class="text-blue-600 underline">
+            <div class="bg-gray-100 text-gray-900 rounded-3xl p-8 max-w-md text-center shadow-2xl">
+              <p class="text-red-600 mb-4 font-semibold">${error.message}</p>
+              <a href="mailto:support@bootandblade.com" class="text-yellow-600 hover:text-yellow-700 underline">
                 Contact support
               </a>
             </div>
