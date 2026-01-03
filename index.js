@@ -283,10 +283,10 @@ app.post('/api/create-notion-record', async (req, res) => {
     // Prepare properties for Notion
     const notionProperties = {
       'Order Number': {
-        rich_text: [{ text: { content: orderNumber } }]
+        title: [{ text: { content: orderNumber } }]
       },
       'Customer Name': {
-        title: [{ text: { content: customerName || '' } }]
+        rich_text: [{ text: { content: customerName || '' } }]
       },
       'Contact Details': {
         rich_text: [{ text: { content: customerEmail || '' } }]
@@ -302,9 +302,6 @@ app.post('/api/create-notion-record', async (req, res) => {
       },
       'Blade Status': {
         select: { name: 'Placed with Supplier' }
-      },
-      'Last Reviewed': {
-        date: { start: new Date().toISOString().split('T')[0] }
       }
     };
     
