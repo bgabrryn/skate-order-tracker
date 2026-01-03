@@ -115,21 +115,32 @@ See you soon!`
         
         if (data.items && data.items.length > 0) {
           // Map raw status strings to their keys
-          const statuses = data.items.map(item => mapStatusToKey(item.status));
+          const statuses = data.items.map(item => {
+            const mapped = mapStatusToKey(item.status);
+            console.log(`[Frontend] Mapping status "${item.status}" -> "${mapped}"`);
+            return mapped;
+          });
           console.log('[Frontend] All statuses found:', statuses);
-          console.log('[Frontend] Full items data:', JSON.stringify(data.items, null, 2));
+          console.log('[Frontend] Raw item statuses:', data.items.map(item => item.status));
           
-          // Find the most advanced (latest) status in the journey
-          // Reverse iterate through priority to find the highest status
-          for (let i = statusPriority.length - 1; i >= 0; i--) {
-            const status = statusPriority[i];
-            if (statuses.includes(status)) {
-              currentStatus = status;
-              break;
+          // If only one item, use its status directly
+          if (statuses.length === 1) {
+            currentStatus = statuses[0];
+            console.log('[Frontend] Single item, using its status:', currentStatus);
+          } else {
+            // Find the most advanced (latest) status in the journey
+            // Reverse iterate through priority to find the highest status
+            for (let i = statusPriority.length - 1; i >= 0; i--) {
+              const status = statusPriority[i];
+              if (statuses.includes(status)) {
+                currentStatus = status;
+                console.log(`[Frontend] Found most advanced status: "${status}"`);
+                break;
+              }
             }
           }
           
-          console.log('[Frontend] Selected currentStatus:', currentStatus);
+          console.log('[Frontend] Final currentStatus:', currentStatus);
           console.log('[Frontend] Status content available:', statusContent[currentStatus]);
         } else {
           console.warn('[Frontend] No items found in data:', data);
